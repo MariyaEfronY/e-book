@@ -69,16 +69,14 @@ const BookSchema = new Schema<IBook>(
   { timestamps: true },
 );
 
-// 🚨 Business Logic Validation
-BookSchema.pre("save", function (next) {
+BookSchema.pre("save", async function (this: IBook) {
   if (this.isFree) {
-    this.price = 0; // force price = 0 if free
-  } else {
-    if (!this.price || this.price <= 0) {
-      return next(new Error("Premium book must have a valid price"));
-    }
+    this.price = 0;
+    return;
   }
-  next();
-});
 
+  if (!this.price || this.price <= 0) {
+    throw new Error("Premium book must have a valid price");
+  }
+});
 export default mongoose.models.Book || mongoose.model("Book", BookSchema);
