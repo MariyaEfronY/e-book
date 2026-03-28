@@ -41,7 +41,7 @@ export default function UserSidebar() {
             }} className="md:translate-x-0 md:static">
 
                 <div style={{ padding: "40px 20px", textAlign: "center", borderBottom: `1px solid ${COLORS.primary}22` }}>
-                    <h2 style={{ color: COLORS.accent, letterSpacing: "2px", fontSize: "1.5rem" }}>ADMIN</h2>
+                    <h2 style={{ color: COLORS.accent, letterSpacing: "2px", fontSize: "1.5rem" }}>User Dashboard</h2>
                 </div>
 
                 <nav style={{ flex: 1, padding: "20px" }}>
