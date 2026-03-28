@@ -9,7 +9,7 @@ export default function AuthorSidebar() {
 
     const navItems = [
         { name: "My Books", path: "/author", icon: "📚" },
-        { name: "Upload Content", path: "/author/upload", icon: "📤" },
+        { name: "Upload Content", path: "/author/e-book-upload", icon: "📤" },
         { name: "Revenue", path: "/author/earnings", icon: "💰" },
     ];
 

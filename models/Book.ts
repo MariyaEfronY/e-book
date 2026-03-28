@@ -1,5 +1,3 @@
-// /models/Book.ts
-
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IBook extends Document {
@@ -7,76 +5,30 @@ export interface IBook extends Document {
   description: string;
   price: number;
   isFree: boolean;
-  authorId: mongoose.Types.ObjectId;
-  categoryId: mongoose.Types.ObjectId;
-  fileUrl: string;
-  coverImage?: string;
+  authorId: mongoose.Types.ObjectId; // Links to User
+  fileUrl: string; // S3 PDF Link
+  coverImage: string; // S3 Image Link
   status: "pending" | "approved" | "rejected";
-  createdAt: Date;
-  updatedAt: Date;
+  rejectionReason?: string; // Why admin rejected it
 }
 
 const BookSchema = new Schema<IBook>(
   {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    description: {
-      type: String,
-    },
-
-    // 💰 Price (only used if premium)
-    price: {
-      type: Number,
-      default: 0,
-    },
-
-    // 🔥 Free or Paid
-    isFree: {
-      type: Boolean,
-      default: false,
-    },
-
-    authorId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-
-    categoryId: {
-      type: Schema.Types.ObjectId,
-      ref: "Category",
-    },
-
-    fileUrl: {
-      type: String,
-      required: true,
-    },
-
-    coverImage: {
-      type: String,
-    },
-
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    price: { type: Number, default: 0 },
+    isFree: { type: Boolean, default: true },
+    authorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    fileUrl: { type: String, required: true },
+    coverImage: { type: String, required: true },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
+    rejectionReason: { type: String },
   },
   { timestamps: true },
 );
 
-BookSchema.pre("save", async function (this: IBook) {
-  if (this.isFree) {
-    this.price = 0;
-    return;
-  }
-
-  if (!this.price || this.price <= 0) {
-    throw new Error("Premium book must have a valid price");
-  }
-});
 export default mongoose.models.Book || mongoose.model("Book", BookSchema);
