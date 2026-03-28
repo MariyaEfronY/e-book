@@ -1,36 +1,66 @@
-// /app/api/books/access/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Book from "@/models/Book";
 import Order from "@/models/Order";
-import { withAuth } from "@/lib/middleware";
+import { withAuth } from "@/lib/withAuth";
 
-export const POST = withAuth(async (req, user) => {
-  await connectDB();
+export const POST = withAuth(
+  async (req: NextRequest, user) => {
+    try {
+      await connectDB();
 
-  const { bookId } = await req.json();
+      const { bookId } = await req.json();
 
-  const book = await Book.findById(bookId);
+      // 🛑 Validate input
+      if (!bookId) {
+        return NextResponse.json(
+          { error: "Book ID is required" },
+          { status: 400 },
+        );
+      }
 
-  if (!book) {
-    return NextResponse.json({ error: "Book not found" }, { status: 404 });
-  }
+      // 📚 Find book
+      const book = await Book.findById(bookId);
 
-  // ✅ Free book
-  if (book.isFree) {
-    return NextResponse.json({ fileUrl: book.fileUrl });
-  }
+      if (!book) {
+        return NextResponse.json({ error: "Book not found" }, { status: 404 });
+      }
 
-  const order = await Order.findOne({
-    userId: user.id,
-    bookId,
-    paymentStatus: "completed",
-  });
+      // ✅ Free book access
+      if (book.isFree) {
+        return NextResponse.json({
+          success: true,
+          fileUrl: book.fileUrl,
+        });
+      }
 
-  if (!order) {
-    return NextResponse.json({ error: "Purchase required" }, { status: 403 });
-  }
+      // 💰 Check purchase
+      const order = await Order.findOne({
+        userId: user.id,
+        bookId,
+        paymentStatus: "completed",
+      });
 
-  return NextResponse.json({ fileUrl: book.fileUrl });
-});
+      if (!order) {
+        return NextResponse.json(
+          { error: "Purchase required" },
+          { status: 403 },
+        );
+      }
+
+      // ✅ Paid access granted
+      return NextResponse.json({
+        success: true,
+        fileUrl: book.fileUrl,
+      });
+    } catch (error) {
+      console.error("BOOK ACCESS ERROR:", error);
+
+      return NextResponse.json(
+        { error: "Internal Server Error" },
+        { status: 500 },
+      );
+    }
+  },
+  ["user", "author", "admin"], // 🔓 All logged-in roles can access
+);

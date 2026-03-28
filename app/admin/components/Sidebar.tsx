@@ -20,6 +20,18 @@ export default function AdminSidebar() {
         { name: "Add Projects", path: "/admin/projectcreation", icon: "➕" },
         { name: "Settings", path: "/admin/settings", icon: "⚙️" },
     ];
+    const handleLogout = async () => {
+        try {
+            await fetch("/api/auth/logout", {
+                method: "POST",
+            });
+
+            // 🔁 Redirect to login
+            window.location.href = "/login";
+        } catch {
+            alert("Logout failed");
+        }
+    };
 
     return (
         <>
@@ -59,6 +71,9 @@ export default function AdminSidebar() {
                                     <span>{item.icon}</span>
                                     <span style={{ fontWeight: active ? "bold" : "normal" }}>{item.name}</span>
                                 </div>
+                                <button onClick={handleLogout}>
+                                    Logout
+                                </button>
                             </Link>
                         );
                     })}

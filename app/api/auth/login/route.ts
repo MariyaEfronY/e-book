@@ -1,30 +1,38 @@
-// /app/api/auth/login/route.ts
-
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User from "@/models/User";
 import { connectDB } from "@/lib/db";
+import User from "@/models/User";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   await connectDB();
-
   const { email, password } = await req.json();
 
   const user = await User.findOne({ email });
-  if (!user) {
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
-  }
-
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return NextResponse.json({ error: "Wrong password" }, { status: 400 });
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    return NextResponse.json({ error: "Invalid Credentials" }, { status: 401 });
   }
 
   const token = jwt.sign(
     { id: user._id, role: user.role },
-    process.env.JWT_SECRET as string,
+    process.env.JWT_SECRET!,
+    { expiresIn: "1d" },
   );
 
-  return NextResponse.json({ token });
+  // 1. Create the response
+  const response = NextResponse.json({
+    success: true,
+    role: user.role, // Pass role to frontend for redirection
+    token,
+  });
+
+  // 2. Set the Cookie (This is the "Bridge" to your Middleware)
+  response.cookies.set("token", token, {
+    httpOnly: true, // Security: prevents JS from stealing the token
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 24, // 1 day
+    path: "/",
+  });
+
+  return response;
 }
