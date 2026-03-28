@@ -71,10 +71,11 @@ export default function AdminSidebar() {
                                     <span>{item.icon}</span>
                                     <span style={{ fontWeight: active ? "bold" : "normal" }}>{item.name}</span>
                                 </div>
-                                <button onClick={handleLogout}>
+                                <div><button onClick={handleLogout}>
                                     Logout
-                                </button>
+                                </button></div>
                             </Link>
+
                         );
                     })}
                 </nav>
