@@ -5,7 +5,7 @@ export const GET = withAuth(async (req: NextRequest, user) => {
   return NextResponse.json({
     success: true,
     user: {
-      id: user.id,
+      id: user.name,
       role: user.role,
     },
   });
