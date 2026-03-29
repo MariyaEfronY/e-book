@@ -16,7 +16,7 @@ export default function AdminSidebar() {
 
     const navItems = [
         { name: "Dashboard", path: "/admin", icon: "📊" },
-        { name: "Certificates", path: "/admin/certificate-all", icon: "📜" },
+        { name: "Payment Verification", path: "/admin/verify-payment", icon: "📜" },
         { name: "Publish Books", path: "/admin/books-publish", icon: "➕" },
         { name: "Settings", path: "/admin/settings", icon: "⚙️" },
     ];

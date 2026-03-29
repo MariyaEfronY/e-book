@@ -16,7 +16,7 @@ export default function UserSidebar() {
 
     const navItems = [
         { name: "Dashboard", path: "/admin", icon: "📊" },
-        { name: "Certificates", path: "/admin/certificate-all", icon: "📜" },
+        { name: "Buyed Books", path: "/user/buyed-books", icon: "📜" },
         { name: "Add Projects", path: "/admin/projectcreation", icon: "➕" },
         { name: "Settings", path: "/admin/settings", icon: "⚙️" },
     ];
