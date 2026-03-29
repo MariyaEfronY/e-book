@@ -1,8 +1,7 @@
 "use client";
-
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { motion } from "framer-motion";
-import router from "next/router";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const THEME = {
     bg: "#320d3e",
@@ -11,32 +10,61 @@ const THEME = {
     peach: "#ffd79d",
 };
 
-export default function LoginPage() {
+export default function LoginPageWrapper() {
+    return (
+        <Suspense fallback={<div style={{ color: "white", textAlign: "center", padding: "50px" }}>Loading...</div>}>
+            <LoginPage />
+        </Suspense>
+    );
+}
+
+function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // 🎯 Capture the "callbackUrl" (e.g., /checkout/123)
+    const callbackUrl = searchParams.get("callbackUrl");
+
     const handleLogin = async () => {
-        const res = await fetch("/api/auth/login", {
-            method: "POST",
-            body: JSON.stringify({ email, password })
-        });
+        if (!email || !password) return alert("Please fill in all fields");
 
-        const data = await res.json();
+        setLoading(true);
+        try {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
 
-        if (data.success) {
-            // 🛡️ ROLE-BASED REDIRECTION
-            const role = data.role.toLowerCase();
+            const data = await res.json();
 
-            if (role === "admin") {
-                window.location.href = "/admin";
-            } else if (role === "author") {
-                window.location.href = "/author";
+            if (data.success) {
+                // 🚦 REDIRECTION LOGIC
+                if (callbackUrl) {
+                    // ✅ Use window.location.href for a clean hard-redirect to the checkout
+                    window.location.href = decodeURIComponent(callbackUrl);
+                    return;
+                }
+
+                const role = data.role.toLowerCase();
+                if (role === "admin") {
+                    window.location.href = "/admin";
+                } else if (role === "author") {
+                    window.location.href = "/author";
+                } else {
+                    window.location.href = "/user";
+                }
             } else {
-                window.location.href = "/user";
+                alert(data.error || "Login failed");
             }
-        } else {
-            alert(data.error);
+        } catch (err) {
+            alert("Something went wrong. Try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -55,16 +83,17 @@ export default function LoginPage() {
                 }}
             >
                 <h2 style={{ color: THEME.peach, fontSize: "28px", fontWeight: "900", marginBottom: "8px" }}>
-                    Welcome Back
+                    {callbackUrl ? "Login to Purchase" : "Welcome Back"}
                 </h2>
                 <p style={{ color: THEME.softPurple, fontSize: "14px", marginBottom: "32px" }}>
-                    Access your professional dashboard
+                    {callbackUrl ? "Securely complete your checkout" : "Access your professional dashboard"}
                 </p>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
                     <input
                         type="email"
                         placeholder="Email Address"
+                        value={email}
                         onChange={e => setEmail(e.target.value)}
                         style={{
                             width: "100%", padding: "14px", borderRadius: "12px",
@@ -76,6 +105,7 @@ export default function LoginPage() {
                     <input
                         type="password"
                         placeholder="Password"
+                        value={password}
                         onChange={e => setPassword(e.target.value)}
                         style={{
                             width: "100%", padding: "14px", borderRadius: "12px",
@@ -90,11 +120,13 @@ export default function LoginPage() {
                         style={{
                             marginTop: "10px", width: "100%", padding: "16px",
                             backgroundColor: THEME.primary, color: "#fff",
-                            border: "none", borderRadius: "12px", cursor: "pointer",
-                            fontWeight: "bold", fontSize: "16px", transition: "0.3s"
+                            border: "none", borderRadius: "12px",
+                            cursor: "pointer", // ✅ FIXED: Added Quotes
+                            fontWeight: "bold", fontSize: "16px", transition: "0.3s",
+                            opacity: loading ? 0.7 : 1
                         }}
                     >
-                        {loading ? "Authenticating..." : "Login to Nexus"}
+                        {loading ? "Authenticating..." : callbackUrl ? "Continue to Checkout" : "Login to Nexus"}
                     </button>
                 </div>
 

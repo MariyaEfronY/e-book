@@ -88,5 +88,6 @@ export const config = {
     "/author/:path*",
     "/user/:path*",
     "/api/:path*", // Matches all API routes
+    "/checkout/:path*",
   ],
 };
