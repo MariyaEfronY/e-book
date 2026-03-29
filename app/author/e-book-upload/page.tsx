@@ -1,82 +1,83 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Upload,
-    FileText,
-    CheckCircle2,
-    AlertCircle,
-    IndianRupee,
-    Loader2,
-    X
+    Upload, FileText, CheckCircle2, AlertCircle,
+    IndianRupee, Loader2, ImageIcon, BookOpen, Sparkles
 } from "lucide-react";
 
+// Professional Color Palette
 const COLORS = {
-    bg: "#320d3e",
-    primary: "#d902ee",
-    accent: "#ffd79d",
+    primary: "#d902ee", // Electric Purple
+    secondary: "#320d3e",
+    accent: "#ffd79d", // Peach/Gold
     glass: "rgba(255, 255, 255, 0.03)",
     border: "rgba(217, 2, 238, 0.2)",
-    input: "rgba(0, 0, 0, 0.2)",
+    input: "rgba(0, 0, 0, 0.3)",
 };
 
-export default function PublishBook() {
+export default function PublishBookPage() {
+    const [pdf, setPdf] = useState<File | null>(null);
+    const [cover, setCover] = useState<File | null>(null);
+    const [coverPreview, setCoverPreview] = useState<string | null>(null);
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [isFree, setIsFree] = useState(true);
+    const [price, setPrice] = useState(0);
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Form State
-    const [file, setFile] = useState<File | null>(null);
-    const [formData, setFormData] = useState({
-        title: "",
-        description: "",
-        isFree: true,
-        price: "0",
-        coverImage: "",
-    });
+    const pdfRef = useRef<HTMLInputElement>(null);
+    const coverRef = useRef<HTMLInputElement>(null);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = e.target.files?.[0];
-        if (selectedFile && selectedFile.type === "application/pdf") {
-            setFile(selectedFile);
-            setStatus(null);
+    // Handle Cover Preview
+    const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null;
+        setCover(file);
+        if (file) {
+            setCoverPreview(URL.createObjectURL(file));
         } else {
-            setStatus({ type: "error", msg: "Please select a valid PDF file" });
+            setCoverPreview(null);
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!file) return setStatus({ type: "error", msg: "PDF Manuscript is required" });
+        if (!pdf || !title || !description) {
+            setStatus({ type: "error", msg: "Please complete all required fields." });
+            return;
+        }
 
-        setLoading(true);
-        setStatus(null);
+        const formData = new FormData();
+        formData.append("pdf", pdf);
+        if (cover) formData.append("coverImage", cover);
+        formData.append("title", title);
+        formData.append("description", description);
+        formData.append("isFree", String(isFree));
+        formData.append("price", String(price));
 
         try {
-            const data = new FormData();
-            data.append("pdf", file);
-            data.append("title", formData.title);
-            data.append("description", formData.description);
-            data.append("isFree", String(formData.isFree));
-            data.append("price", formData.price);
-            data.append("coverImage", formData.coverImage);
+            setLoading(true);
+            setStatus(null);
 
-            const res = await fetch("/api/books/publish", {
+            // FIXED PATH: Ensure plural 'books'
+            const res = await fetch("/api/publish", {
                 method: "POST",
-                body: data, // Note: No Content-Type header; browser sets it automatically for FormData
+                body: formData,
             });
 
-            const result = await res.json();
+            const data = await res.json();
 
-            if (result.success) {
-                setStatus({ type: "success", msg: "Published! Sent to Admin for approval." });
-                setFormData({ title: "", description: "", isFree: true, price: "0", coverImage: "" });
-                setFile(null);
-            } else {
-                setStatus({ type: "error", msg: result.error || "Something went wrong" });
-            }
-        } catch (err) {
-            setStatus({ type: "error", msg: "Server connection failed" });
+            if (!res.ok) throw new Error(data.error || "Upload failed");
+
+            setStatus({ type: "success", msg: "Book published successfully! Awaiting admin review." });
+
+            // Reset
+            setPdf(null); setCover(null); setCoverPreview(null);
+            setTitle(""); setDescription(""); setPrice(0); setIsFree(true);
+
+        } catch (err: any) {
+            setStatus({ type: "error", msg: err.message || "Network error" });
         } finally {
             setLoading(false);
         }
@@ -86,128 +87,130 @@ export default function PublishBook() {
         width: "100%", padding: "14px", borderRadius: "12px",
         backgroundColor: COLORS.input, border: `1px solid ${COLORS.border}`,
         color: "white", outline: "none", fontSize: "14px", marginTop: "8px",
-        transition: "border-color 0.2s"
+        transition: "all 0.3s ease"
     };
 
     return (
-        <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
-            <header style={{ marginBottom: "40px" }}>
-                <h1 style={{ color: COLORS.accent, fontSize: "2.2rem", fontWeight: "900", margin: 0 }}>
-                    Publish New E-Book
-                </h1>
-                <p style={{ color: "rgba(255,255,255,0.5)", marginTop: "8px" }}>
-                    Upload your manuscript (PDF) and set your publishing details.
-                </p>
-            </header>
-
-            {status && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                    style={{
-                        padding: "16px", borderRadius: "12px", marginBottom: "30px",
-                        display: "flex", alignItems: "center", gap: "12px",
-                        backgroundColor: status.type === "success" ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)",
-                        border: `1px solid ${status.type === "success" ? "#22c55e" : "#ef4444"}`,
-                        color: status.type === "success" ? "#4ade80" : "#f87171"
-                    }}>
-                    {status.type === "success" ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-                    <span style={{ fontSize: "14px", fontWeight: "600" }}>{status.msg}</span>
-                </motion.div>
-            )}
-
-            <form onSubmit={handleSubmit} style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "40px" }}>
-
-                {/* Section 1: Book Details */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                    <div>
-                        <label style={{ fontSize: "12px", fontWeight: "bold", color: COLORS.primary, textTransform: "uppercase" }}>Book Title</label>
-                        <input required style={inputStyle} value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. The Art of Web Design" />
+        <div style={{ minHeight: "100vh", padding: "20px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{
+                    width: "100%", maxWidth: "1000px", background: COLORS.glass,
+                    backdropFilter: "blur(12px)", padding: "30px", borderRadius: "32px",
+                    border: `1px solid ${COLORS.border}`, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)"
+                }}
+            >
+                {/* Header */}
+                <header style={{ marginBottom: "30px", textAlign: "center" }}>
+                    <div style={{ display: "inline-flex", padding: "12px", borderRadius: "50%", background: "rgba(217, 2, 238, 0.1)", marginBottom: "15px" }}>
+                        <BookOpen color={COLORS.primary} size={32} />
                     </div>
+                    <h1 style={{ color: COLORS.accent, fontSize: "2rem", fontWeight: "900", margin: 0, letterSpacing: "-0.5px" }}>
+                        Author Studio
+                    </h1>
+                    <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "14px", marginTop: "5px" }}>Publish your next masterpiece to the world.</p>
+                </header>
 
-                    <div>
-                        <label style={{ fontSize: "12px", fontWeight: "bold", color: COLORS.primary, textTransform: "uppercase" }}>Synopsis / Description</label>
-                        <textarea required rows={6} style={inputStyle} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Write a compelling summary..." />
-                    </div>
+                <AnimatePresence>
+                    {status && (
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                            style={{
+                                overflow: "hidden", display: "flex", alignItems: "center", gap: "10px",
+                                padding: "15px", borderRadius: "12px", marginBottom: "20px",
+                                background: status.type === "success" ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)",
+                                border: `1px solid ${status.type === "success" ? "#22c55e" : "#ef4444"}`,
+                                color: status.type === "success" ? "#4ade80" : "#f87171"
+                            }}>
+                            {status.type === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                            <span style={{ fontSize: "14px", fontWeight: "600" }}>{status.msg}</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-                    <div style={{ display: "flex", gap: "20px" }}>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: "12px", fontWeight: "bold", color: COLORS.primary, textTransform: "uppercase" }}>Price Model</label>
-                            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                                {["Free", "Paid"].map(mode => (
-                                    <button key={mode} type="button"
-                                        onClick={() => setFormData({ ...formData, isFree: mode === "Free", price: mode === "Free" ? "0" : formData.price })}
-                                        style={{
-                                            flex: 1, padding: "12px", borderRadius: "10px", border: "none", cursor: "pointer",
-                                            backgroundColor: (mode === "Free" ? formData.isFree : !formData.isFree) ? COLORS.primary : COLORS.glass,
-                                            color: (mode === "Free" ? formData.isFree : !formData.isFree) ? "white" : "rgba(255,255,255,0.4)",
-                                            fontWeight: "bold", transition: "0.2s"
-                                        }}>{mode}</button>
-                                ))}
-                            </div>
+                <form onSubmit={handleSubmit} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "30px" }}>
+
+                    {/* Column 1: Metadata */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                        <div>
+                            <label style={{ fontSize: "11px", fontWeight: "800", color: COLORS.primary, textTransform: "uppercase", letterSpacing: "1px" }}>Manuscript Title</label>
+                            <input required style={inputStyle} placeholder="Enter book title..." value={title} onChange={(e) => setTitle(e.target.value)} />
                         </div>
 
-                        <AnimatePresence>
-                            {!formData.isFree && (
-                                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} style={{ flex: 1 }}>
-                                    <label style={{ fontSize: "12px", fontWeight: "bold", color: COLORS.primary, textTransform: "uppercase" }}>Price (₹)</label>
-                                    <div style={{ position: "relative" }}>
-                                        <input type="number" style={inputStyle} value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} />
-                                        <IndianRupee size={14} style={{ position: "absolute", right: "12px", top: "22px", opacity: 0.4 }} />
-                                    </div>
+                        <div>
+                            <label style={{ fontSize: "11px", fontWeight: "800", color: COLORS.primary, textTransform: "uppercase", letterSpacing: "1px" }}>Synopsis</label>
+                            <textarea required style={{ ...inputStyle, minHeight: "120px", resize: "none" }} placeholder="Describe your book..." value={description} onChange={(e) => setDescription(e.target.value)} />
+                        </div>
+
+                        <div style={{ background: "rgba(255,255,255,0.02)", padding: "20px", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontSize: "14px", fontWeight: "600" }}>Monetization</span>
+                                <button type="button" onClick={() => setIsFree(!isFree)} style={{
+                                    padding: "6px 16px", borderRadius: "20px", border: "none",
+                                    background: isFree ? "rgba(255,255,255,0.1)" : COLORS.primary,
+                                    color: "white", fontSize: "12px", fontWeight: "bold", cursor: "pointer"
+                                }}>
+                                    {isFree ? "Free Access" : "Paid Content"}
+                                </button>
+                            </div>
+
+                            {!isFree && (
+                                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: "15px", position: "relative" }}>
+                                    <input type="number" style={inputStyle} placeholder="Set Price" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+                                    <IndianRupee size={14} style={{ position: "absolute", right: "12px", top: "22px", opacity: 0.3 }} />
                                 </motion.div>
                             )}
-                        </AnimatePresence>
-                    </div>
-                </div>
-
-                {/* Section 2: Files & Action */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                    <div>
-                        <label style={{ fontSize: "12px", fontWeight: "bold", color: COLORS.primary, textTransform: "uppercase" }}>PDF Manuscript</label>
-                        <div
-                            onClick={() => fileInputRef.current?.click()}
-                            style={{
-                                marginTop: "10px", height: "200px", borderRadius: "20px",
-                                border: `2px dashed ${file ? COLORS.primary : "rgba(255,255,255,0.1)"}`,
-                                backgroundColor: file ? "rgba(217, 2, 238, 0.05)" : COLORS.input,
-                                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                                cursor: "pointer", transition: "all 0.3s"
-                            }}>
-                            <input type="file" ref={fileInputRef} hidden accept=".pdf" onChange={handleFileChange} />
-                            {file ? (
-                                <>
-                                    <FileText size={48} color={COLORS.primary} />
-                                    <p style={{ color: "white", marginTop: "12px", fontWeight: "600", fontSize: "14px" }}>{file.name}</p>
-                                    <button onClick={(e) => { e.stopPropagation(); setFile(null); }} style={{ background: "none", border: "none", color: COLORS.primary, fontSize: "12px", cursor: "pointer", marginTop: "5px" }}>Remove</button>
-                                </>
-                            ) : (
-                                <>
-                                    <Upload size={48} color="rgba(255,255,255,0.2)" />
-                                    <p style={{ color: "rgba(255,255,255,0.4)", marginTop: "12px", fontSize: "13px" }}>Drag & drop or click to upload PDF</p>
-                                </>
-                            )}
                         </div>
                     </div>
 
-                    <div>
-                        <label style={{ fontSize: "12px", fontWeight: "bold", color: COLORS.primary, textTransform: "uppercase" }}>Cover Image URL</label>
-                        <input style={inputStyle} value={formData.coverImage} onChange={e => setFormData({ ...formData, coverImage: e.target.value })} placeholder="https://..." />
-                    </div>
+                    {/* Column 2: Uploads */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                        <div onClick={() => pdfRef.current?.click()} style={{
+                            height: "140px", borderRadius: "20px", border: `2px dashed ${pdf ? COLORS.primary : "rgba(255,255,255,0.1)"}`,
+                            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                            cursor: "pointer", transition: "0.3s", background: pdf ? "rgba(217, 2, 238, 0.05)" : "transparent"
+                        }}>
+                            <input type="file" ref={pdfRef} hidden accept="application/pdf" onChange={(e) => setPdf(e.target.files?.[0] || null)} />
+                            {pdf ? <><FileText color={COLORS.primary} size={30} /><span style={{ fontSize: "12px", marginTop: "10px" }}>{pdf.name}</span></>
+                                : <><Upload size={30} style={{ opacity: 0.2 }} /><span style={{ fontSize: "12px", marginTop: "10px", color: "rgba(255,255,255,0.3)" }}>Upload PDF</span></>}
+                        </div>
 
-                    <motion.button
-                        whileHover={{ scale: 1.02, boxShadow: `0 0 25px ${COLORS.primary}40` }}
-                        whileTap={{ scale: 0.98 }}
-                        disabled={loading}
-                        style={{
-                            marginTop: "auto", padding: "20px", borderRadius: "15px", border: "none",
-                            backgroundColor: COLORS.primary, color: "white", fontSize: "16px",
-                            fontWeight: "900", cursor: loading ? "not-allowed" : "pointer",
-                            display: "flex", alignItems: "center", justifyContent: "center", gap: "10px"
-                        }}
-                    >
-                        {loading ? <><Loader2 className="animate-spin" size={20} /> UPLOADING...</> : "SEND TO ADMIN"}
-                    </motion.button>
-                </div>
-            </form>
+                        <div onClick={() => coverRef.current?.click()} style={{
+                            height: "220px", borderRadius: "20px", border: `2px dashed ${cover ? COLORS.primary : "rgba(255,255,255,0.1)"}`,
+                            position: "relative", overflow: "hidden", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"
+                        }}>
+                            <input type="file" ref={coverRef} hidden accept="image/*" onChange={handleCoverChange} />
+                            {coverPreview ? (
+                                <>
+                                    <img src={coverPreview} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.5 }} />
+                                    <div style={{ position: "absolute", textAlign: "center" }}>
+                                        <ImageIcon size={30} color={COLORS.primary} />
+                                        <p style={{ fontSize: "12px", fontWeight: "bold" }}>Change Cover</p>
+                                    </div>
+                                </>
+                            ) : (
+                                <><ImageIcon size={30} style={{ opacity: 0.2 }} /><span style={{ fontSize: "12px", marginTop: "10px", color: "rgba(255,255,255,0.3)" }}>Upload Cover Image</span></>
+                            )}
+                        </div>
+
+                        <motion.button
+                            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                            disabled={loading}
+                            type="submit"
+                            style={{
+                                padding: "18px", borderRadius: "16px", border: "none",
+                                background: COLORS.primary, color: "white", fontWeight: "800",
+                                fontSize: "16px", cursor: loading ? "not-allowed" : "pointer",
+                                boxShadow: "0 10px 25px rgba(217, 2, 238, 0.4)",
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: "10px"
+                            }}
+                        >
+                            {loading ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
+                            {loading ? "UPLOADING..." : "PUBLISH MANUSCRIPT"}
+                        </motion.button>
+                    </div>
+                </form>
+            </motion.div>
         </div>
     );
 }
