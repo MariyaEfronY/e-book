@@ -10,6 +10,7 @@ export interface IBook extends Document {
   coverImage: string; // S3 Image Link
   status: "pending" | "approved" | "rejected";
   rejectionReason?: string; // Why admin rejected it
+  isPublished: boolean;
 }
 
 const BookSchema = new Schema<IBook>(
@@ -26,6 +27,7 @@ const BookSchema = new Schema<IBook>(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
+    isPublished: { type: Boolean, default: false },
     rejectionReason: { type: String },
   },
   { timestamps: true },

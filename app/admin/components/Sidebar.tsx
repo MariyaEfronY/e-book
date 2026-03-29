@@ -17,7 +17,7 @@ export default function AdminSidebar() {
     const navItems = [
         { name: "Dashboard", path: "/admin", icon: "📊" },
         { name: "Certificates", path: "/admin/certificate-all", icon: "📜" },
-        { name: "Add Projects", path: "/admin/projectcreation", icon: "➕" },
+        { name: "Publish Books", path: "/admin/books-publish", icon: "➕" },
         { name: "Settings", path: "/admin/settings", icon: "⚙️" },
     ];
     const handleLogout = async () => {
