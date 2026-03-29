@@ -1,37 +1,42 @@
 "use client";
+import React from "react";
 import Navbar from "../components/Navbar";
+import Hero from "../components/Hero";
+import Stats from "../components/Stats";
 import BookGrid from "../components/BookGrid";
+// import Footer from "../components/Footer";
 
 export default function HomePage() {
     return (
         <div style={{
-            // Neural Dark Theme (Better than f3f4f6 for your Purple aesthetic)
-            backgroundColor: "#0d0211",
-            backgroundImage: "radial-gradient(circle at 50% -20%, #35084d 0%, #0d0211 80%)",
+            backgroundColor: "#320d3e", // Based on your palette
+            backgroundImage: "radial-gradient(circle at 50% -20%, #d902ee33 0%, #320d3e 80%)",
             minHeight: "100vh",
-            color: "white"
+            color: "white",
+            overflowX: "hidden"
         }}>
-            {/* 🛠️ 1. Navigation */}
             <Navbar />
 
+            <main>
+                {/* Render each modular component from the components folder */}
+                <Hero />
+                <Stats />
 
-            {/* 📚 3. Main Content (The Published Books) */}
-            <div style={{ paddingBottom: "100px" }}>
-                <BookGrid />
-            </div>
+                {/* Main Content Section */}
+                <section style={{ padding: "80px 5% 100px" }}>
+                    <div style={{ textAlign: "center", marginBottom: "50px" }}>
+                        <h2 style={{ fontSize: "32px", color: "#ffd79d", fontWeight: "900" }}>
+                            TRENDING PUBLICATIONS
+                        </h2>
+                        <p style={{ color: "#f162ff", opacity: 0.7, marginTop: "10px" }}>
+                            Handpicked digital masterpieces from the Nexus ecosystem
+                        </p>
+                    </div>
+                    <BookGrid />
+                </section>
+            </main>
 
-            {/* 🏮 4. Simple Footer */}
-            <footer style={{
-                textAlign: "center",
-                padding: "40px",
-                borderTop: "1px solid rgba(217, 2, 238, 0.1)",
-                color: "rgba(255,255,255,0.3)",
-                fontSize: "12px",
-                fontWeight: "600",
-                letterSpacing: "1px"
-            }}>
-                DESIGNED BY MARIYA EFRON • 2026
-            </footer>
+            {/* <Footer /> */}
         </div>
     );
 }
