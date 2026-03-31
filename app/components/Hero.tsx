@@ -1,5 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
+import { Variants } from "framer-motion";
+
 
 export default function Hero() {
     // Animation Variants for staggered entry
@@ -16,7 +18,7 @@ export default function Hero() {
 
     const itemVariants = {
         hidden: { y: 20, opacity: 0 },
-        visible: { y: 0, opacity: 1, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
+        visible: { y: 0, opacity: 1, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as any } }
     };
 
     return (
@@ -123,7 +125,7 @@ export default function Hero() {
                 <motion.div
                     variants={itemVariants}
                     animate={{ y: [0, -15, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "anticipate" }}
                     style={{ marginTop: "60px" }}
                 >
                     <div style={{
