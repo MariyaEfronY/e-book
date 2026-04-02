@@ -5,11 +5,16 @@ export interface IBook extends Document {
   description: string;
   price: number;
   isFree: boolean;
-  authorId: mongoose.Types.ObjectId; // Links to User
-  fileUrl: string; // S3 PDF Link
-  coverImage: string; // S3 Image Link
+  authorId: mongoose.Types.ObjectId;
+  fileUrl: string;
+  coverImage: string;
+
+  // ✅ NEW FIELDS
+  isbn: string;
+  reviewFileUrl?: string;
+
   status: "pending" | "approved" | "rejected";
-  rejectionReason?: string; // Why admin rejected it
+  rejectionReason?: string;
   isPublished: boolean;
 }
 
@@ -20,17 +25,36 @@ const BookSchema = new Schema<IBook>(
     price: { type: Number, default: 0 },
     isFree: { type: Boolean, default: true },
     authorId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+
     fileUrl: { type: String, required: true },
     coverImage: { type: String, required: true },
+
+    // ✅ ISBN (Unique recommended)
+    isbn: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+
+    // ✅ Review / Preview file (like first 5 pages PDF)
+    reviewFileUrl: {
+      type: String,
+      default: "",
+    },
+
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
+
     isPublished: { type: Boolean, default: false },
+
     rejectionReason: { type: String },
   },
   { timestamps: true },
 );
 
-export default mongoose.models.Book || mongoose.model("Book", BookSchema);
+export default mongoose.models.Book ||
+  mongoose.model<IBook>("Book", BookSchema);

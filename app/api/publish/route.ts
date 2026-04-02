@@ -15,41 +15,57 @@ export async function POST(req: NextRequest) {
     const user = await getUserFromRequest(req);
 
     if (!user || user.role !== "author") {
-      console.warn("🚫 Unauthorized access");
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 },
       );
     }
 
-    console.log("👤 Author:", user.id);
-
-    // 📡 2. CONNECT DB
     await connectDB();
 
-    // 📦 3. PARSE FORM DATA
+    // 📦 2. PARSE FORM DATA
     const formData = await req.formData();
 
     const pdfFile = formData.get("pdf") as File;
+    const reviewFile = formData.get("reviewFile") as File; // ✅ NEW
     const coverImageFile = formData.get("coverImage") as File;
 
     const title = formData.get("title") as string;
     const description = formData.get("description") as string;
+    const isbn = formData.get("isbn") as string; // ✅ NEW
 
     const isFree = formData.get("isFree") === "true";
     const price = Number(formData.get("price") || 0);
 
     // 🛑 VALIDATION
-    if (!pdfFile || !title || !description) {
+    if (!pdfFile || !title || !description || !isbn) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
         { status: 400 },
       );
     }
 
-    console.log("📄 PDF:", pdfFile.name);
+    // 🔍 ISBN VALIDATION (NO AUTO GENERATION)
+    const isbnRegex = /^(97(8|9))?\d{9}(\d|X)$/;
+    if (!isbnRegex.test(isbn)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid ISBN format" },
+        { status: 400 },
+      );
+    }
 
-    // ☁️ 4. UPLOAD PDF TO S3
+    // 🚫 DUPLICATE ISBN CHECK
+    const existingBook = await Book.findOne({ isbn });
+    if (existingBook) {
+      return NextResponse.json(
+        { success: false, error: "ISBN already exists" },
+        { status: 400 },
+      );
+    }
+
+    console.log("📄 Uploading PDF:", pdfFile.name);
+
+    // ☁️ 3. UPLOAD MAIN PDF
     const pdfBuffer = Buffer.from(await pdfFile.arrayBuffer());
 
     const pdfKey = `authors/${user.id}/books/${Date.now()}-${pdfFile.name.replace(
@@ -69,6 +85,31 @@ export async function POST(req: NextRequest) {
     const pdfUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${pdfKey}`;
 
     console.log("✅ PDF uploaded");
+
+    // 📄 4. UPLOAD REVIEW FILE (optional)
+    let reviewFileUrl = "";
+
+    if (reviewFile) {
+      const reviewBuffer = Buffer.from(await reviewFile.arrayBuffer());
+
+      const reviewKey = `authors/${user.id}/previews/${Date.now()}-${reviewFile.name.replace(
+        /\s+/g,
+        "-",
+      )}`;
+
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: reviewKey,
+          Body: reviewBuffer,
+          ContentType: "application/pdf",
+        }),
+      );
+
+      reviewFileUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${reviewKey}`;
+
+      console.log("📄 Review PDF uploaded");
+    }
 
     // 🖼️ 5. UPLOAD COVER IMAGE (optional)
     let coverImageUrl = "";
@@ -101,8 +142,10 @@ export async function POST(req: NextRequest) {
       description,
       price,
       isFree,
+      isbn, // ✅ MANUAL ISBN
       authorId: user.id,
       fileUrl: pdfUrl,
+      reviewFileUrl, // ✅ PREVIEW FILE
       coverImage: coverImageUrl,
       status: "pending",
     });
