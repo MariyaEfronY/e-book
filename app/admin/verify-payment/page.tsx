@@ -1,194 +1,157 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Loader2, User, BookOpen, Clock, CheckCircle2 } from "lucide-react";
+import { Check, X, ExternalLink, Loader2, User as UserIcon, BookOpen, IndianRupee } from "lucide-react";
 
-// 1. Define the Interface to fix the TypeScript "never[]" error
-interface PurchaseRequest {
-    _id: string;
-    userId: {
-        name: string;
-        email: string;
-    };
-    bookId: {
-        title: string;
-        price: number;
-    };
-    amount: number;
-    transactionId: string;
-    status: "pending" | "completed" | "rejected";
-}
-
-const THEME = {
-    bg: "#0d0214",
-    primary: "#d902ee",
-    accent: "#ffd79d",
-    glass: "rgba(255, 255, 255, 0.03)",
-    border: "rgba(217, 2, 238, 0.2)",
-};
-
-export default function AdminVerifyPage() {
-    // 2. Properly type the state
-    const [allRequests, setAllRequests] = useState<PurchaseRequest[]>([]);
+export default function VerifyPaymentPage() {
+    const [purchases, setPurchases] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [actionId, setActionId] = useState<string | null>(null);
 
-    const fetchRequests = async () => {
+    // Ensure this matches your route folder name: /api/admin/purchase or /api/admin/verify-payment
+    const API_URL = "/api/admin/verify-payment";
+
+    const fetchData = async () => {
         try {
-            const res = await fetch("/api/admin/purchases");
-            const data = await res.json();
-            if (data.success) {
-                setAllRequests(data.requests);
+            const res = await fetch("/api/admin/verify-payment"); // Verify this URL!
+
+            // DEBUG STEP: Check the content type
+            const contentType = res.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await res.text();
+                console.error("Expected JSON but got:", text.substring(0, 100));
+                return;
             }
-        } catch (error) {
-            console.error("Failed to fetch requests:", error);
+
+            const data = await res.json();
+            if (data.success) setPurchases(data.purchases);
+        } catch (err) {
+            console.error("Fetch Error:", err);
         } finally {
             setLoading(false);
         }
     };
+    useEffect(() => { fetchData(); }, []);
 
-    useEffect(() => {
-        fetchRequests();
-    }, []);
-
-    const handleApprove = async (id: string) => {
-        setActionId(id);
-        try {
-            const res = await fetch("/api/admin/purchases", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ purchaseId: id })
-            });
-
-            if (res.ok) {
-                // ✅ This update logic is now Type-Safe
-                setAllRequests((prev) =>
-                    prev.map((req) =>
-                        req._id === id ? { ...req, status: "completed" } : req
-                    )
-                );
-            } else {
-                alert("Server error during approval");
-            }
-        } catch (err) {
-            alert("Network error. Please try again.");
-        } finally {
-            setActionId(null);
-        }
+    const updateStatus = async (purchaseId: string, status: string) => {
+        const res = await fetch(API_URL, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ purchaseId, status }),
+        });
+        if (res.ok) fetchData();
     };
 
-    const pending = allRequests.filter((r) => r.status === "pending");
-    const completed = allRequests.filter((r) => r.status === "completed");
-
     if (loading) return (
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: THEME.bg }}>
-            <Loader2 className="animate-spin" size={40} color={THEME.primary} />
+        <div className="flex h-screen items-center justify-center bg-[#320d3e]">
+            <Loader2 className="animate-spin text-[#d902ee]" size={40} />
         </div>
     );
 
     return (
-        <main style={{ minHeight: "100vh", background: THEME.bg, padding: "40px 20px", color: "white" }}>
-            <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+        <div className="min-h-screen bg-[#320d3e] p-4 md:p-8 text-white pb-20 md:pb-8">
+            <header className="mb-8 mt-14 md:mt-0">
+                <h1 className="text-2xl md:text-3xl font-bold text-[#ffd79d]">Payment Verification</h1>
+                <p className="text-sm md:text-base text-white/60">Review manual book purchases</p>
+            </header>
 
-                <header style={{ marginBottom: "30px", display: "flex", alignItems: "center", gap: "10px" }}>
-                    <Clock color={THEME.accent} size={24} />
-                    <h2 style={{ fontSize: "24px", fontWeight: "900", color: THEME.accent }}>Pending Verification ({pending.length})</h2>
-                </header>
+            <div className="grid max-w-6xl gap-6 mx-auto">
+                {purchases.map((p, index) => (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        key={p._id}
+                        className="overflow-hidden border shadow-xl bg-white/5 border-white/10 rounded-2xl"
+                    >
+                        {/* Status Ribbon for Mobile - only visible on small screens */}
+                        <div className={`md:hidden px-4 py-2 text-center text-xs font-bold uppercase tracking-widest ${p.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                            p.status === 'rejected' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
+                            }`}>
+                            Status: {p.status}
+                        </div>
 
-                <div style={{ display: "grid", gap: "15px", marginBottom: "60px" }}>
-                    <AnimatePresence mode="popLayout">
-                        {pending.length === 0 ? (
-                            <p style={{ color: "rgba(255,255,255,0.2)", padding: "20px" }}>No pending requests.</p>
-                        ) : (
-                            pending.map((req) => (
-                                <RequestCard
-                                    key={req._id}
-                                    req={req}
-                                    onApprove={handleApprove}
-                                    isProcessing={actionId === req._id}
-                                />
-                            ))
-                        )}
-                    </AnimatePresence>
-                </div>
+                        <div className="flex flex-col gap-6 p-5 md:grid md:grid-cols-3 md:p-6">
 
-                <hr style={{ border: "none", borderTop: `1px solid ${THEME.border}`, marginBottom: "40px" }} />
+                            {/* Section 1: Buyer Info */}
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 text-[#ffd79d] font-semibold text-sm">
+                                    <UserIcon size={16} /> <span>Buyer Details</span>
+                                </div>
+                                <div className="p-3 border bg-black/10 rounded-xl border-white/5">
+                                    <p className="text-base font-medium text-white">{p.userId?.name || "Unknown User"}</p>
+                                    <p className="text-xs truncate text-white/50">{p.userId?.email}</p>
+                                </div>
+                                <div className="p-3 rounded-xl bg-[#d902ee]/10 border border-[#d902ee]/20">
+                                    <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Transaction Ref</p>
+                                    <p className="font-mono text-sm text-[#ffd79d] break-all">{p.transactionId}</p>
+                                    <div className="flex items-center gap-1 mt-2 text-xl font-black text-white">
+                                        <IndianRupee size={18} /> {p.amount}
+                                    </div>
+                                </div>
+                            </div>
 
-                <header style={{ marginBottom: "30px", display: "flex", alignItems: "center", gap: "10px" }}>
-                    <CheckCircle2 color="#00ffcc" size={24} />
-                    <h2 style={{ fontSize: "24px", fontWeight: "900", color: "#00ffcc" }}>Approved History ({completed.length})</h2>
-                </header>
+                            {/* Section 2: Book Info (Horizontal divider on mobile) */}
+                            <div className="pt-5 space-y-3 border-t md:border-t-0 md:border-l border-white/10 md:pt-0 md:pl-6">
+                                <div className="flex items-center gap-2 text-[#ffd79d] font-semibold text-sm">
+                                    <BookOpen size={16} /> <span>Book & Author</span>
+                                </div>
+                                <p className="text-base font-bold leading-tight text-white">{p.bookId?.title}</p>
+                                <div className="p-3 border rounded-xl bg-white/5 border-white/5">
+                                    <p className="text-[10px] uppercase text-white/40 mb-1 font-bold">Author</p>
+                                    <p className="text-sm font-medium">{p.bookId?.authorId?.name}</p>
+                                    <p className="text-xs text-white/50">{p.bookId?.authorId?.email}</p>
+                                </div>
+                            </div>
 
-                <div style={{ display: "grid", gap: "15px", opacity: 0.8 }}>
-                    {completed.map((req) => (
-                        <RequestCard key={req._id} req={req} isHistory />
-                    ))}
-                </div>
+                            {/* Section 3: Actions (Horizontal divider on mobile) */}
+                            <div className="flex flex-col justify-between pt-5 border-t md:border-t-0 md:border-l border-white/10 md:pt-0 md:pl-6">
+                                {/* Desktop Status Badge */}
+                                <span className={`hidden md:inline-block self-end px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${p.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                                    p.status === 'rejected' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
+                                    }`}>
+                                    {p.status}
+                                </span>
+
+                                <div className="w-full mt-2 space-y-3">
+                                    {p.paymentScreenshot && (
+                                        <a
+                                            href={p.paymentScreenshot}
+                                            target="_blank"
+                                            className="flex items-center justify-center w-full gap-2 py-3 text-sm font-semibold transition-all border bg-white/10 hover:bg-white/20 rounded-xl border-white/10"
+                                        >
+                                            <ExternalLink size={16} /> View Screenshot
+                                        </a>
+                                    )}
+
+                                    {p.status === 'pending' && (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                onClick={() => updateStatus(p._id, 'completed')}
+                                                className="flex items-center justify-center gap-2 py-3 font-bold text-white transition-all bg-green-500 hover:bg-green-600 rounded-xl active:scale-95"
+                                            >
+                                                <Check size={20} /> Approve
+                                            </button>
+                                            <button
+                                                onClick={() => updateStatus(p._id, 'rejected')}
+                                                className="flex items-center justify-center gap-2 py-3 font-bold text-white transition-all bg-red-500 hover:bg-red-600 rounded-xl active:scale-95"
+                                            >
+                                                <X size={20} /> Reject
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                        </div>
+                    </motion.div>
+                ))}
+
+                {purchases.length === 0 && (
+                    <div className="py-20 text-center border border-dashed bg-white/5 rounded-3xl border-white/10">
+                        <p className="text-white/40">No payment records found.</p>
+                    </div>
+                )}
             </div>
-        </main>
-    );
-}
-
-// 🎴 Reusable Card Component with Prop Typing
-interface CardProps {
-    req: PurchaseRequest;
-    onApprove?: (id: string) => void;
-    isProcessing?: boolean;
-    isHistory?: boolean;
-}
-
-function RequestCard({ req, onApprove, isProcessing, isHistory }: CardProps) {
-    return (
-        <motion.div
-            layout
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, x: 50 }}
-            style={{
-                background: THEME.glass, padding: "20px",
-                borderRadius: "16px", border: `1px solid ${isHistory ? "rgba(0,255,204,0.1)" : THEME.border}`,
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                backdropFilter: "blur(10px)"
-            }}
-        >
-            <div style={{ display: "flex", gap: "40px", alignItems: "center" }}>
-                <div style={{ width: "200px" }}>
-                    <div style={{ color: THEME.accent, fontWeight: "800", fontSize: "14px" }}>{req.userId?.name || "Unknown User"}</div>
-                    <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>{req.userId?.email}</div>
-                </div>
-
-                <div style={{ width: "200px" }}>
-                    <div style={{ fontWeight: "700", fontSize: "14px" }}>{req.bookId?.title || "Deleted Book"}</div>
-                    <div style={{ color: THEME.primary, fontWeight: "900" }}>₹{req.amount}</div>
-                </div>
-
-                <div style={{ background: "rgba(0,0,0,0.2)", padding: "8px 12px", borderRadius: "8px" }}>
-                    <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", display: "block" }}>REF NO.</span>
-                    <code style={{ color: isHistory ? "#00ffcc" : "#fff", fontWeight: "bold" }}>{req.transactionId}</code>
-                </div>
-            </div>
-
-            {!isHistory && onApprove && (
-                <button
-                    onClick={() => onApprove(req._id)}
-                    disabled={isProcessing}
-                    style={{
-                        background: THEME.primary, color: "white", border: "none",
-                        padding: "10px 20px", borderRadius: "10px", fontWeight: "900",
-                        cursor: "pointer", display: "flex", alignItems: "center", gap: "8px",
-                        transition: "all 0.2s ease"
-                    }}
-                >
-                    {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                    APPROVE
-                </button>
-            )}
-
-            {isHistory && (
-                <div style={{ color: "#00ffcc", fontSize: "12px", fontWeight: "900", display: "flex", alignItems: "center", gap: "5px" }}>
-                    <CheckCircle2 size={16} /> VERIFIED
-                </div>
-            )}
-        </motion.div>
+        </div>
     );
 }
