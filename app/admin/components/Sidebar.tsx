@@ -27,7 +27,7 @@ export default function AdminSidebar() {
     const router = useRouter();
 
     const navItems = [
-        { name: "Dashboard", path: "/admin", icon: <LayoutDashboard size={20} /> },
+        { name: "Dashboard", path: "/admin/books", icon: <LayoutDashboard size={20} /> },
         { name: "Verification", path: "/admin/verify-payment", icon: <CheckCircle size={20} /> },
         { name: "Publish Books", path: "/admin/books-publish", icon: <BookPlus size={20} /> },
         { name: "Settings", path: "/admin/settings", icon: <Settings size={20} /> },
