@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       }),
     );
 
-    const pdfUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${pdfKey}`;
+    const pdfUrl = `https://${BUCKET_NAME}.s3.${process.env.APP_AWS_REGION}.amazonaws.com/${pdfKey}`;
 
     console.log("✅ PDF uploaded");
 
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
         }),
       );
 
-      reviewFileUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${reviewKey}`;
+      reviewFileUrl = `https://${BUCKET_NAME}.s3.${process.env.APP_AWS_REGION}.amazonaws.com/${reviewKey}`;
 
       console.log("📄 Review PDF uploaded");
     }
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
         }),
       );
 
-      coverImageUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${imgKey}`;
+      coverImageUrl = `https://${BUCKET_NAME}.s3.${process.env.APP_AWS_REGION}.amazonaws.com/${imgKey}`;
 
       console.log("🖼️ Cover uploaded");
     }
