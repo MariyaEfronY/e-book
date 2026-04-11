@@ -43,6 +43,8 @@ export default function BookGrid() {
 
         if (book.isFree) {
             window.open(book.fullPdfUrl, "_blank"); // ✅ UPDATED
+
+            // window.open(`/api/books/${book.id}/watermarked`)
         } else {
             router.push(`/checkout/${book.id}`);
         }
@@ -162,8 +164,7 @@ export default function BookGrid() {
                             {/* PREVIEW */}
                             {book.previewUrl && (
                                 <button
-                                    onClick={() => window.open(book.previewUrl, "_blank")}
-                                    style={{
+                                    onClick={() => router.push(`/preview/${book.id}`)} style={{
                                         flex: 1,
                                         padding: "12px",
                                         borderRadius: "12px",
