@@ -70,30 +70,47 @@ export default function BookGrid() {
 
                 <div className="flex w-full gap-3 md:w-auto">
                     <div className="relative flex-1 md:w-40">
-                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[#d902ee]" size={14} />
+                        {/* 🎯 Primary Icon */}
+                        <Filter
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#d902ee] z-10"
+                            size={14}
+                        />
+
                         <select
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
-                            className="w-full pl-9 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl appearance-none outline-none cursor-pointer focus:border-[#d902ee]"
+                            /* 🚀 text-white ensures the selected label is crisp */
+                            className="w-full pl-10 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl appearance-none outline-none cursor-pointer focus:border-[#d902ee] text-white font-bold text-xs transition-all relative z-0"
                         >
-                            <option value="all">All Content</option>
-                            <option value="free">Free Access</option>
-                            <option value="paid">Premium</option>
+                            {/* 🎨 Solid background prevents "invisible" white-on-white text */}
+                            <option value="all" className="bg-[#1a0521] text-white">All Content</option>
+                            <option value="free" className="bg-[#1a0521] text-white">Free Access</option>
+                            <option value="paid" className="bg-[#1a0521] text-white">Premium</option>
                         </select>
-                        <ChevronDown className="absolute -translate-y-1/2 pointer-events-none right-3 top-1/2 text-white/30" size={14} />
+
+                        {/* 🎯 Secondary Icon */}
+                        <ChevronDown
+                            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#d902ee]"
+                            size={14}
+                        />
                     </div>
 
                     <div className="relative flex-1 md:w-48">
                         <select
                             value={sort}
                             onChange={(e) => setSort(e.target.value)}
-                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl appearance-none outline-none cursor-pointer focus:border-[#d902ee]"
+                            /* 🚀 Added 'text-white' to ensure the selected value is white */
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl appearance-none outline-none cursor-pointer focus:border-[#d902ee] text-white font-bold text-xs transition-all"
                         >
-                            <option value="new">Latest Release</option>
-                            <option value="price-low">Lowest Price</option>
-                            <option value="price-high">Highest Price</option>
+                            {/* 🎨 Style the options with a solid background so the white text is visible */}
+                            <option value="new" className="bg-[#1a0521] text-white">Latest Release</option>
+                            <option value="price-low" className="bg-[#1a0521] text-white">Lowest Price</option>
+                            <option value="price-high" className="bg-[#1a0521] text-white">Highest Price</option>
                         </select>
-                        <ChevronDown className="absolute -translate-y-1/2 pointer-events-none right-3 top-1/2 text-white/30" size={14} />
+                        <ChevronDown
+                            className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#d902ee]"
+                            size={16}
+                        />
                     </div>
                 </div>
             </div>
