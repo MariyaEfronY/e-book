@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Download, Clock, ExternalLink, Loader2 } from "lucide-react";
+import { BookOpen, Clock, ExternalLink, Link, Loader2 } from "lucide-react";
 
 const THEME = {
     bg: "#0d0214",
@@ -32,78 +32,67 @@ export default function UserDashboard() {
     );
 
     return (
-        <main style={{ minHeight: "100vh", background: THEME.bg, color: "white", padding: "40px 20px" }}>
-            <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-                <header style={{ marginBottom: "40px" }}>
-                    <h1 style={{ fontSize: "32px", fontWeight: "900", color: THEME.accent }}>My Library</h1>
-                    <p style={{ color: "rgba(255,255,255,0.4)" }}>Access your purchased and approved digital books.</p>
-                </header>
+        <div className="w-full">
+            <header className="mb-10">
+                <h1 className="text-4xl font-black tracking-tighter text-white uppercase">
+                    My <span className="text-[#d902ee]">Library</span>
+                </h1>
+                <p className="mt-2 font-medium text-white/40">Access your digital publications and active requests.</p>
+            </header>
 
-                {purchases.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "100px", background: THEME.glass, borderRadius: "24px", border: `1px solid ${THEME.border}` }}>
-                        <BookOpen size={48} color="rgba(255,255,255,0.1)" style={{ marginBottom: "20px" }} />
-                        <p style={{ color: "rgba(255,255,255,0.3)" }}>You haven't requested any books yet.</p>
-                        <a href="/" style={{ color: THEME.primary, textDecoration: "none", fontWeight: "bold", marginTop: "10px", display: "inline-block" }}>Browse Store</a>
+            {purchases.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-24 px-6 bg-white/[0.02] border border-dashed border-[#d902ee44] rounded-[2.5rem] text-center">
+                    <div className="w-20 h-20 bg-[#d902ee11] rounded-full flex items-center justify-center mb-6">
+                        <BookOpen size={32} className="text-[#d902ee]" />
                     </div>
-                ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "25px" }}>
-                        {purchases.map((item: any) => (
-                            <motion.div
-                                key={item._id}
-                                whileHover={{ y: -5 }}
-                                style={{
-                                    background: THEME.glass, borderRadius: "20px", border: `1px solid ${THEME.border}`,
-                                    padding: "16px", display: "flex", flexDirection: "column", overflow: "hidden"
-                                }}
-                            >
-                                {/* Cover Image */}
-                                <div style={{ height: "280px", borderRadius: "12px", overflow: "hidden", marginBottom: "15px", position: "relative", background: "#000" }}>
-                                    <img
-                                        src={item.bookId?.coverImage || "https://via.placeholder.com/300x450"}
-                                        style={{ width: "100%", height: "100%", objectFit: "cover", opacity: item.status === "completed" ? 1 : 0.4 }}
-                                        alt="Book Cover"
-                                    />
-
-                                    {/* Status Badge */}
-                                    <div style={{
-                                        position: "absolute", top: "10px", right: "10px",
-                                        background: item.status === "completed" ? "#00ffcc" : THEME.accent,
-                                        color: "#000", fontSize: "10px", fontWeight: "900", padding: "4px 10px", borderRadius: "20px"
-                                    }}>
-                                        {item.status.toUpperCase()}
-                                    </div>
+                    <p className="font-bold tracking-widest uppercase text-white/30">No publications in your archive</p>
+                    <Link href="/" className="mt-6 text-[#ffd79d] hover:text-[#d902ee] transition-colors font-black text-sm border-b border-[#ffd79d]">
+                        EXPLORE THE NEXUS STORE
+                    </Link>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {purchases.map((item: any, i) => (
+                        <motion.div
+                            key={item._id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                            className="group bg-white/[0.03] border border-[#d902ee22] hover:border-[#d902ee88] p-4 rounded-[2rem] flex flex-col transition-all duration-300"
+                        >
+                            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-4 bg-black shadow-2xl">
+                                <img
+                                    src={item.bookId?.coverImage || "/placeholder.jpg"}
+                                    className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${item.status !== "completed" ? "grayscale opacity-30" : ""}`}
+                                    alt="Cover"
+                                />
+                                <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-xl
+                                ${item.status === "completed" ? "bg-[#00ffcc] text-black" : "bg-[#ffd79d] text-black"}`}>
+                                    {item.status}
                                 </div>
+                            </div>
 
-                                <h3 style={{ fontSize: "18px", fontWeight: "800", marginBottom: "5px" }}>{item.bookId?.title}</h3>
-                                <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "20px" }}>Transaction: {item.transactionId}</p>
+                            <div className="flex-1 px-2 pb-2">
+                                <h3 className="text-lg font-black tracking-tight text-white uppercase truncate">{item.bookId?.title}</h3>
+                                <p className="text-[10px] text-white/30 font-mono mt-1">ID: {item.transactionId?.slice(-8)}</p>
+                            </div>
 
-                                {/* Conditional Button */}
-                                {item.status === "completed" ? (
-                                    <button
-                                        onClick={() => window.open(item.bookId?.fileUrl, "_blank")}
-                                        style={{
-                                            marginTop: "auto", width: "100%", padding: "12px", borderRadius: "10px",
-                                            background: "white", color: "black", border: "none", fontWeight: "900",
-                                            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", cursor: "pointer"
-                                        }}
-                                    >
-                                        <ExternalLink size={16} /> VIEW PDF
-                                    </button>
-                                ) : (
-                                    <div style={{
-                                        marginTop: "auto", width: "100%", padding: "12px", borderRadius: "10px",
-                                        background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.3)",
-                                        border: `1px solid ${THEME.border}`, fontSize: "12px", fontWeight: "700",
-                                        display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
-                                    }}>
-                                        <Clock size={16} /> AWAITING APPROVAL
-                                    </div>
-                                )}
-                            </motion.div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </main>
+                            {item.status === "completed" ? (
+                                <button
+                                    onClick={() => window.open(item.bookId?.fileUrl, "_blank")}
+                                    className="w-full py-4 bg-white text-black rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#ffd79d] transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <ExternalLink size={14} /> Open Reader
+                                </button>
+                            ) : (
+                                <div className="w-full py-4 bg-white/5 border border-white/5 rounded-xl text-white/20 font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2">
+                                    <Clock size={14} /> Verification Pending
+                                </div>
+                            )}
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }
