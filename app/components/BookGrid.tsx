@@ -1,26 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Download, ShoppingBag, Loader2, Eye } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Download, ShoppingBag, Loader2, Eye,
+    Search, Filter, ChevronDown, BookOpen
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-
-const COLORS = {
-    primary: "#d902ee",
-    accent: "#ffd79d",
-    glass: "rgba(255, 255, 255, 0.03)",
-    border: "rgba(217, 2, 238, 0.2)",
-};
 
 export default function BookGrid() {
     const [books, setBooks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-
-    // 🔥 NEW STATES
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("all");
     const [sort, setSort] = useState("new");
-
     const router = useRouter();
 
     useEffect(() => {
@@ -38,19 +31,12 @@ export default function BookGrid() {
         fetchBooks();
     }, []);
 
-    // 🔥 FILTER + SEARCH + SORT
     const filteredBooks = books
         .filter((book) => {
             const searchMatch =
                 book.title?.toLowerCase().includes(search.toLowerCase()) ||
-                book.author?.toLowerCase().includes(search.toLowerCase()) ||
-                (book.isbn || "").toLowerCase().includes(search.toLowerCase());
-
-            const filterMatch =
-                filter === "all" ||
-                (filter === "free" && book.isFree) ||
-                (filter === "paid" && !book.isFree);
-
+                book.author?.toLowerCase().includes(search.toLowerCase());
+            const filterMatch = filter === "all" || (filter === "free" ? book.isFree : !book.isFree);
             return searchMatch && filterMatch;
         })
         .sort((a, b) => {
@@ -59,214 +45,134 @@ export default function BookGrid() {
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
 
-    // 🔐 Purchase / Download Logic
-    const handleAction = (book: any) => {
-        const isLoggedIn = document.cookie.includes("token");
-
-        if (!isLoggedIn) {
-            const destination = `/checkout/${book.id}`;
-            router.push(`/login?callbackUrl=${encodeURIComponent(destination)}`);
-            return;
-        }
-
-        if (book.isFree) {
-            window.open(book.fullPdfUrl, "_blank");
-        } else {
-            router.push(`/checkout/${book.id}`);
-        }
-    };
-
-    if (loading) {
-        return (
-            <div style={{ display: "flex", justifyContent: "center", padding: "100px" }}>
-                <Loader2 className="animate-spin" color={COLORS.primary} size={40} />
-            </div>
-        );
-    }
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+            <Loader2 className="animate-spin text-[#d902ee]" size={48} />
+            <p className="text-[#ffd79d] font-mono tracking-widest animate-pulse">SYNCHING NEXUS...</p>
+        </div>
+    );
 
     return (
-        <section style={{ padding: "40px 20px", maxWidth: "1200px", margin: "0 auto" }}>
+        <section className="w-full px-4 py-12 mx-auto text-white max-w-7xl">
 
-            {/* 🔍 SEARCH + FILTER UI */}
-            <div
-                style={{
-                    display: "flex",
-                    gap: "15px",
-                    marginBottom: "30px",
-                    flexWrap: "wrap",
-                }}
-            >
-                {/* SEARCH */}
-                <input
-                    type="text"
-                    placeholder="Search by title, author, ISBN..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    style={{
-                        flex: "1",
-                        padding: "12px 15px",
-                        borderRadius: "12px",
-                        border: `1px solid ${COLORS.border}`,
-                        background: COLORS.glass,
-                        color: "white",
-                        outline: "none",
-                        minWidth: "250px",
-                    }}
-                />
+            {/* 🔍 SEARCH & FILTER BAR */}
+            <div className="flex flex-col md:flex-row gap-4 mb-12 items-center bg-[#ffffff05] p-4 rounded-[2rem] border border-[#d902ee22] backdrop-blur-md">
+                <div className="relative flex-1 w-full">
+                    <Search className="absolute -translate-y-1/2 left-4 top-1/2 text-white/30" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Search publications..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-[#d902ee] outline-none transition-all placeholder:text-white/20"
+                    />
+                </div>
 
-                {/* FILTER */}
-                <select
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    style={{
-                        padding: "12px",
-                        borderRadius: "12px",
-                        border: `1px solid ${COLORS.border}`,
-                        background: COLORS.glass,
-                        color: "white",
-                        cursor: "pointer",
-                    }}
-                >
-                    <option value="all">All</option>
-                    <option value="free">Free</option>
-                    <option value="paid">Paid</option>
-                </select>
+                <div className="flex w-full gap-3 md:w-auto">
+                    <div className="relative flex-1 md:w-40">
+                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[#d902ee]" size={14} />
+                        <select
+                            value={filter}
+                            onChange={(e) => setFilter(e.target.value)}
+                            className="w-full pl-9 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl appearance-none outline-none cursor-pointer focus:border-[#d902ee]"
+                        >
+                            <option value="all">All Content</option>
+                            <option value="free">Free Access</option>
+                            <option value="paid">Premium</option>
+                        </select>
+                        <ChevronDown className="absolute -translate-y-1/2 pointer-events-none right-3 top-1/2 text-white/30" size={14} />
+                    </div>
 
-                {/* SORT */}
-                <select
-                    value={sort}
-                    onChange={(e) => setSort(e.target.value)}
-                    style={{
-                        padding: "12px",
-                        borderRadius: "12px",
-                        border: `1px solid ${COLORS.border}`,
-                        background: COLORS.glass,
-                        color: "white",
-                        cursor: "pointer",
-                    }}
-                >
-                    <option value="new">Newest</option>
-                    <option value="price-low">Price: Low → High</option>
-                    <option value="price-high">Price: High → Low</option>
-                </select>
+                    <div className="relative flex-1 md:w-48">
+                        <select
+                            value={sort}
+                            onChange={(e) => setSort(e.target.value)}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl appearance-none outline-none cursor-pointer focus:border-[#d902ee]"
+                        >
+                            <option value="new">Latest Release</option>
+                            <option value="price-low">Lowest Price</option>
+                            <option value="price-high">Highest Price</option>
+                        </select>
+                        <ChevronDown className="absolute -translate-y-1/2 pointer-events-none right-3 top-1/2 text-white/30" size={14} />
+                    </div>
+                </div>
             </div>
 
-            {/* 📚 BOOK GRID */}
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                    gap: "30px",
-                }}
+            {/* 📚 DYNAMIC GRID */}
+            <motion.div
+                layout
+                className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             >
-                {filteredBooks.length === 0 ? (
-                    <p style={{ color: "white" }}>No books found.</p>
-                ) : (
-                    filteredBooks.map((book: any, i) => (
+                <AnimatePresence mode="popLayout">
+                    {filteredBooks.map((book) => (
                         <motion.div
                             key={book.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: i * 0.05 }}
+                            layout
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
                             whileHover={{ y: -10 }}
-                            style={{
-                                background: COLORS.glass,
-                                borderRadius: "24px",
-                                border: `1px solid ${COLORS.border}`,
-                                padding: "20px",
-                                backdropFilter: "blur(10px)",
-                                display: "flex",
-                                flexDirection: "column",
-                            }}
+                            className="group relative bg-[#1a0521] rounded-[2.5rem] p-5 border border-[#d902ee22] hover:border-[#d902ee88] transition-colors overflow-hidden flex flex-col"
                         >
-                            {/* COVER */}
-                            <div
-                                style={{
-                                    height: "350px",
-                                    borderRadius: "15px",
-                                    overflow: "hidden",
-                                    marginBottom: "20px",
-                                    position: "relative",
-                                }}
-                            >
+                            {/* COVER ART */}
+                            <div className="relative aspect-[3/4] rounded-[1.8rem] overflow-hidden mb-6 shadow-2xl">
                                 <img
-                                    src={book.coverImage || "https://via.placeholder.com/300x450"}
+                                    src={book.coverImage || "https://via.placeholder.com/400x600"}
                                     alt={book.title}
-                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                    className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
                                 />
-
-                                <div
-                                    style={{
-                                        position: "absolute",
-                                        top: "12px",
-                                        right: "12px",
-                                        background: "rgba(0,0,0,0.8)",
-                                        padding: "6px 12px",
-                                        borderRadius: "10px",
-                                        color: COLORS.accent,
-                                        fontWeight: "800",
-                                        fontSize: "12px",
-                                    }}
-                                >
-                                    {book.isFree ? "FREE" : `₹${book.price}`}
+                                <div className="absolute inset-0 flex items-end p-6 transition-opacity opacity-0 bg-gradient-to-t from-black/80 via-transparent to-transparent group-hover:opacity-100">
+                                    <p className="text-[10px] text-[#ffd79d] font-black tracking-widest uppercase">Buy for Access</p>
+                                </div>
+                                <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-xl border border-white/10 px-4 py-1.5 rounded-full shadow-xl">
+                                    <span className="text-[#ffd79d] font-black text-xs">
+                                        {book.isFree ? "OPEN" : `₹${book.price}`}
+                                    </span>
                                 </div>
                             </div>
 
-                            {/* TITLE */}
-                            <h3 style={{ margin: "0 0 5px", fontSize: "20px", color: "white" }}>
-                                {book.title}
-                            </h3>
+                            {/* DETAILS */}
+                            <div className="flex-1">
+                                <h3 className="text-xl font-black mb-1 line-clamp-1 group-hover:text-[#d902ee] transition-colors uppercase tracking-tighter">
+                                    {book.title}
+                                </h3>
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#d902ee]" />
+                                    <p className="text-xs font-bold tracking-widest uppercase text-white/40">{book.author}</p>
+                                </div>
+                            </div>
 
-                            {/* AUTHOR */}
-                            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>
-                                by <span style={{ color: COLORS.primary }}>{book.author}</span>
-                            </p>
-
-                            {/* ISBN */}
-                            <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
-                                ISBN: <span style={{ color: COLORS.accent }}>{book.isbn || "N/A"}</span>
-                            </p>
-
-                            {/* BUTTONS */}
-                            <div style={{ display: "flex", gap: "10px", marginTop: "auto" }}>
-                                {book.previewUrl && (
-                                    <button
-                                        onClick={() => router.push(`/preview/${book.id}`)}
-                                        style={{
-                                            flex: 1,
-                                            padding: "12px",
-                                            borderRadius: "12px",
-                                            border: `1px solid ${COLORS.primary}`,
-                                            color: COLORS.primary,
-                                            background: "transparent",
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        <Eye size={16} /> Preview
-                                    </button>
-                                )}
+                            {/* ACTIONS */}
+                            <div className="grid grid-cols-2 gap-3 pt-4 mt-auto">
+                                <button
+                                    onClick={() => router.push(`/preview/${book.id}`)}
+                                    className="flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-black transition-all"
+                                >
+                                    <Eye size={14} className="text-[#d902ee]" /> PREVIEW
+                                </button>
 
                                 <button
-                                    onClick={() => handleAction(book)}
-                                    style={{
-                                        flex: 1,
-                                        padding: "12px",
-                                        borderRadius: "12px",
-                                        background: book.isFree ? "white" : COLORS.primary,
-                                        color: book.isFree ? "black" : "white",
-                                        border: "none",
-                                        cursor: "pointer",
-                                    }}
+                                    onClick={() => router.push(book.isFree ? book.fullPdfUrl : `/checkout/${book.id}`)}
+                                    className={`flex items-center justify-center gap-2 py-3.5 rounded-2xl text-xs font-black transition-all shadow-lg ${book.isFree
+                                        ? "bg-white text-black hover:bg-[#ffd79d]"
+                                        : "bg-[#d902ee] text-white shadow-[#d902ee33] hover:scale-105"
+                                        }`}
                                 >
-                                    {book.isFree ? <Download size={16} /> : <ShoppingBag size={16} />}
-                                    {book.isFree ? "Download" : "Buy"}
+                                    {book.isFree ? <Download size={14} /> : <ShoppingBag size={14} />}
+                                    {book.isFree ? "GET" : "PURCHASE"}
                                 </button>
                             </div>
                         </motion.div>
-                    ))
-                )}
-            </div>
+                    ))}
+                </AnimatePresence>
+            </motion.div>
+
+            {filteredBooks.length === 0 && (
+                <div className="text-center py-20 bg-white/5 rounded-[3rem] border border-dashed border-white/10">
+                    <BookOpen className="mx-auto mb-4 text-white/10" size={48} />
+                    <p className="font-bold tracking-widest uppercase text-white/40">No matching publications found</p>
+                </div>
+            )}
         </section>
     );
 }
