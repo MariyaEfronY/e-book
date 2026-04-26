@@ -63,11 +63,11 @@ export default function UserDashboard() {
                             <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-4 bg-black shadow-2xl">
                                 <img
                                     src={item.bookId?.coverImage || "/placeholder.jpg"}
-                                    className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${item.status !== "completed" ? "grayscale opacity-30" : ""}`}
+                                    className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${item.status !== "paid" ? "grayscale opacity-30" : ""}`}
                                     alt="Cover"
                                 />
                                 <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-xl
-                                ${item.status === "completed" ? "bg-[#00ffcc] text-black" : "bg-[#ffd79d] text-black"}`}>
+                                ${item.status === "paid" ? "bg-[#00ffcc] text-black" : "bg-[#ffd79d] text-black"}`}>
                                     {item.status}
                                 </div>
                             </div>
@@ -77,7 +77,7 @@ export default function UserDashboard() {
                                 <p className="text-[10px] text-white/30 font-mono mt-1">ID: {item.transactionId?.slice(-8)}</p>
                             </div>
 
-                            {item.status === "completed" ? (
+                            {item.status === "paid" ? (
                                 <button
                                     onClick={() => window.open(item.bookId?.fileUrl, "_blank")}
                                     className="w-full py-4 bg-white text-black rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#ffd79d] transition-colors flex items-center justify-center gap-2"

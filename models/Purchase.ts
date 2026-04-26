@@ -4,9 +4,24 @@ const PurchaseSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     bookId: { type: Schema.Types.ObjectId, ref: "Book", required: true },
-    amount: { type: Number, required: true }, // The price they paid
-    transactionId: { type: String, required: true }, // UPI/Bank Ref No.
-    paymentScreenshot: { type: String }, // Optional: S3 URL or Cloudinary URL
+
+    amount: { type: Number, required: true },
+
+    // 🔹 OLD (manual)
+    transactionId: { type: String },
+    paymentScreenshot: { type: String },
+
+    // 🔹 NEW (Razorpay)
+    orderId: { type: String },
+    paymentId: { type: String },
+    signature: { type: String },
+
+    paymentMethod: {
+      type: String,
+      enum: ["manual", "razorpay"],
+      default: "manual",
+    },
+
     status: {
       type: String,
       enum: ["pending", "completed", "rejected"],
