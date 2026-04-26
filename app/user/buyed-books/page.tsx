@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, Clock, ExternalLink, Link, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const THEME = {
     bg: "#0d0214",
@@ -14,6 +15,8 @@ const THEME = {
 export default function UserDashboard() {
     const [purchases, setPurchases] = useState([]);
     const [loading, setLoading] = useState(true);
+    const router = useRouter(); // ✅ add this
+
 
     useEffect(() => {
         const fetchMyBooks = async () => {
@@ -79,7 +82,7 @@ export default function UserDashboard() {
 
                             {item.status === "paid" ? (
                                 <button
-                                    onClick={() => window.open(item.bookId?.fileUrl, "_blank")}
+                                    onClick={() => router.push(`/library/${item.bookId._id}`)}
                                     className="w-full py-4 bg-white text-black rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#ffd79d] transition-colors flex items-center justify-center gap-2"
                                 >
                                     <ExternalLink size={14} /> Open Reader
